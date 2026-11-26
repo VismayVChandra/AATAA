@@ -18,7 +18,7 @@
 
     var scored = pool.map(function (g) {
       var match = vibes ? g.tags.filter(function (t) { return vibes.indexOf(t) >= 0; }).length * 3 : 1.5;
-      return { g: g, s: match + Math.random() * 2 };
+      return { g: g, s: match + Math.random() * 2 + (A.isFav(g.id) ? 2 : 0) };
     });
 
     var roles = [

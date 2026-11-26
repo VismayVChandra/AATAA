@@ -332,6 +332,40 @@ details.all[open] summary::after{content:"−"}
 #toast.show{animation:toast 1.4s ease forwards}
 @keyframes toast{0%{opacity:0;transform:translate(-50%,12px) scale(.9)}12%,80%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0}}
 
+/* ---------- selection, rank badges, favourites, daily ---------- */
+.pchip.sel{border-color:var(--teal);background:linear-gradient(135deg,rgba(46,230,197,.2),rgba(91,140,255,.12));box-shadow:0 0 0 1px var(--teal) inset,0 10px 24px -12px var(--teal)}
+.pchip.sel::after{content:"✓";margin-left:auto;color:var(--teal);font-weight:900}
+.pchip .rk{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:900;color:#052;background:linear-gradient(135deg,var(--teal),var(--green));flex:none}
+.pchip:has(.rk)::after{content:none}
+.pill.hot{color:#ffd9a8;border-color:rgba(255,154,60,.5);background:rgba(255,154,60,.12)}
+.favbtn{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:18px;line-height:1;cursor:pointer;color:var(--mute);
+  background:rgba(255,255,255,.07);border:1px solid var(--line);z-index:2;transition:transform .15s var(--spring),color .2s}
+.favbtn:active{transform:scale(.85)}
+.favbtn.on{color:#ff4d8d;background:rgba(255,77,141,.15);border-color:rgba(255,77,141,.5)}
+.gtile{position:relative}
+.gtile .favbtn{width:26px;height:26px;font-size:14px;right:8px;top:8px}
+.gtile b{padding-right:22px}
+.daily{display:flex;flex-direction:column;gap:12px;border:1.5px solid transparent;border-radius:26px;padding:16px;
+  background:linear-gradient(#1b1239,#130c2c) padding-box,linear-gradient(135deg,var(--a1),rgba(255,255,255,.05) 55%,var(--a2)) border-box;box-shadow:0 22px 44px -26px var(--a1)}
+.daily .why b{color:var(--yellow)}
+
+/* ---------- reaction duel ---------- */
+.duel{flex:1;display:flex;flex-direction:column;gap:10px;min-height:calc(100vh - 130px);min-height:calc(100dvh - 130px)}
+.pad{flex:1;border-radius:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;touch-action:none;cursor:pointer;
+  font-weight:900;font-size:34px;letter-spacing:-.02em;background:linear-gradient(135deg,#ff5468,#b9253a);box-shadow:0 20px 40px -20px #000,inset 0 1px 0 rgba(255,255,255,.3);transition:background .12s}
+.pad.go{background:linear-gradient(135deg,#34d399,#10b981);animation:pop .15s}
+.pad.win{background:linear-gradient(135deg,#ffd23f,#ff9a3c);color:#2a1700}
+.pad.lose{background:linear-gradient(135deg,#4b5563,#1f2937)}
+.pad.top{transform:rotate(180deg)}
+.pad small{font-size:16px;font-weight:700;opacity:.9;letter-spacing:0}
+.mid{text-align:center;font-weight:900;font-size:22px;color:var(--mute);letter-spacing:.1em}
+.vs{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap}
+.vs span{color:var(--mute);font-weight:900;letter-spacing:.2em}
+
+/* ---------- finishing touches ---------- */
+h1,.q,.prompt b,.opt,.word.big{text-wrap:balance}
+p,.mute{text-wrap:pretty}
+
 /* ---------- desktop: show the app as a floating window ---------- */
 @media (min-width:700px){
   body{padding:28px 0}

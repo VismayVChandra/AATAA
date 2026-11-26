@@ -25,7 +25,7 @@
   A.save = function () {
     try {
       var S = A.S;
-      localStorage.setItem('aataa.prefs', JSON.stringify({ count: S.count, pack: S.pack, age: S.age, vibes: S.vibes, time: S.time, sound: S.sound }));
+      localStorage.setItem('aataa.prefs', JSON.stringify({ count: S.count, pack: S.pack, age: S.age, vibes: S.vibes, time: S.time, sound: S.sound, ready: !!S.ready, players: S.players }));
     } catch (e) {}
   };
   A.load = function () {
@@ -82,7 +82,9 @@
   A.accents = {
     likely: ['#ff4d8d', '#ff9a3c'], wyr: ['#5b8cff', '#a855f7'], riddles: ['#2ee6c5', '#5b8cff'],
     imposter: ['#a855f7', '#ff4d8d'], mystery: ['#ffd23f', '#ff8a3c'], tod: ['#ff4d8d', '#8b5cf6'],
-    bomb: ['#ff5468', '#ff9a3c'], charades: ['#34d399', '#2ee6c5'], _: ['#ff4d8d', '#ff9a3c']
+    bomb: ['#ff5468', '#ff9a3c'], charades: ['#34d399', '#2ee6c5'],
+    twotruths: ['#ffd23f', '#ff4d8d'], rank: ['#a855f7', '#5b8cff'], never: ['#ff9a3c', '#ff4d8d'], reaction: ['#34d399', '#ffd23f'],
+    _: ['#ff4d8d', '#ff9a3c']
   };
   A.accentFor = function (id) { return A.accents[id] || A.accents._; };
   A.setAccent = function (id) {
@@ -168,6 +170,78 @@
     if (A.S.sound && navigator.vibrate && (!ua || ua.hasBeenActive)) { try { navigator.vibrate(p); } catch (e) {} }
   };
 
+  // sliding-pitch tone and a noise burst: building blocks for richer effects
+  A.sweep = function (f1, f2, ms, type, vol) {
+    if (!A.S.sound || !ac) return;
+    try {
+      var o = ac.createOscillator(), g = ac.createGain(), d = ms / 1000, t = ac.currentTime;
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + d);
+      g.gain.setValueAtTime(vol == null ? 0.15 : vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d + 0.02);
+    } catch (e) {}
+  };
+  A.noise = function (ms, vol) {
+    if (!A.S.sound || !ac) return;
+    try {
+      var len = Math.floor(ac.sampleRate * ms / 1000), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      var s = ac.createBufferSource(), g = ac.createGain();
+      s.buffer = buf; g.gain.value = vol == null ? 0.3 : vol; s.connect(g); g.connect(ac.destination); s.start();
+    } catch (e) {}
+  };
+  // named sound effects, all synthesised (no audio files, works offline)
+  A.sfx = function (name) {
+    A.unlockAudio();
+    function seq(notes, type, vol, gap) {
+      notes.forEach(function (f, i) { setTimeout(function () { A.beep(f, gap * 1.5, type, vol); }, i * gap); });
+    }
+    switch (name) {
+      case 'reveal': A.sweep(300, 900, 180, 'sine', 0.12); break;
+      case 'hide': A.sweep(800, 300, 150, 'sine', 0.1); break;
+      case 'whoosh': A.sweep(200, 1400, 220, 'triangle', 0.08); break;
+      case 'win': seq([523, 659, 784, 1047, 1319], 'triangle', 0.16, 90); break;
+      case 'lose': seq([392, 330, 262], 'sawtooth', 0.1, 160); break;
+      case 'chime': seq([1319, 1760], 'sine', 0.12, 90); break;
+      case 'boom': A.noise(700, 0.4); A.sweep(160, 40, 700, 'sawtooth', 0.3); break;
+    }
+  };
+
+  /* ---------- stats, favourites, daily pick (localStorage only) ---------- */
+  function key(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  A.today = function () { return key(new Date()); };
+  A.getStats = function () {
+    try { return JSON.parse(localStorage.getItem('aataa.stats') || 'null') || { days: [], plays: 0 }; } catch (e) { return { days: [], plays: 0 }; }
+  };
+  A.recordPlay = function () {
+    var s = A.getStats(), t = A.today();
+    s.plays = (s.plays || 0) + 1;
+    if (s.days.indexOf(t) < 0) { s.days.push(t); s.days = s.days.slice(-60); }
+    try { localStorage.setItem('aataa.stats', JSON.stringify(s)); } catch (e) {}
+  };
+  A.streak = function () {
+    var set = {}; A.getStats().days.forEach(function (d) { set[d] = 1; });
+    var d = new Date(), n = 0;
+    if (!set[key(d)]) d.setDate(d.getDate() - 1);
+    while (set[key(d)]) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  };
+  A.favs = function () { try { return JSON.parse(localStorage.getItem('aataa.favs') || '[]'); } catch (e) { return []; } };
+  A.isFav = function (id) { return A.favs().indexOf(id) >= 0; };
+  A.toggleFav = function (id) {
+    var f = A.favs(), i = f.indexOf(id);
+    if (i >= 0) f.splice(i, 1); else f.push(id);
+    try { localStorage.setItem('aataa.favs', JSON.stringify(f)); } catch (e) {}
+    return i < 0;
+  };
+  A.hash = function (s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
+  // same game + twist for everyone on the same day, no server needed
+  A.daily = function () {
+    var k = A.today(), pool = A.games.filter(A.fits);
+    if (!pool.length) pool = A.games;
+    return { key: k, game: pool[A.hash(k + 'g') % pool.length], twist: A.data.daily[A.hash(k + 't') % A.data.daily.length] };
+  };
+
   var wl = null;
   A.keepAwake = function () {
     A.keepOn = true;
@@ -216,6 +290,7 @@
       (o.sub ? '<p class="mute">' + o.sub + '</p>' : '') +
       '<button class="btn primary big" id="ok">' + (o.btn || ("I'm " + A.esc(p.name) + ' →')) + '</button></div>',
       { '#ok': o.onTap });
+    A.sfx('whoosh');
   };
 
   // hold-to-reveal secret screen (stops shoulder surfers)
@@ -226,8 +301,8 @@
       '<button class="btn primary big" id="fin" disabled>' + (o.done || 'Got it — hide &amp; pass') + '</button></div>',
       { '#fin': o.onDone });
     var sec = A.$('#sec'), fin = A.$('#fin');
-    function open() { sec.classList.add('open'); fin.disabled = false; }
-    function shut() { sec.classList.remove('open'); }
+    function open() { if (!sec.classList.contains('open')) A.sfx('reveal'); sec.classList.add('open'); fin.disabled = false; }
+    function shut() { if (sec.classList.contains('open')) { A.sfx('hide'); sec.classList.remove('open'); } }
     sec.addEventListener('pointerdown', function (e) { e.preventDefault(); A.unlockAudio(); open(); });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (t) { sec.addEventListener(t, shut); });
     sec.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -278,7 +353,7 @@
       }).join('') + '</div>';
       rest = rows.slice(3);
     }
-    setTimeout(function () { if (rows[0].s > 0) { A.confetti(); A.buzz([40, 30, 40]); } }, 350);
+    setTimeout(function () { if (rows[0].s > 0) { A.confetti(); A.sfx('win'); A.buzz([40, 30, 40]); } }, 350);
     A.render('<div class="center results"><div class="bigav">' + (o.emoji || '🏆') + '</div><h1>' + o.title + '</h1>' + podium +
       (rest.length ? '<ol class="board">' + rest.map(function (r, i) {
         var idx = rows.indexOf(r);

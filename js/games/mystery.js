@@ -49,12 +49,14 @@
           '<button class="btn primary big" id="next">Next mystery ▶</button></div></div>',
           {
             '#hint': function (e, el) {
+              A.sfx('chime');
               A.$('#hints').insertAdjacentHTML('beforeend', '<div class="hint">💡 ' + A.esc(s.hints[shown]) + '</div>');
               shown++;
               el.textContent = '💡 Give a hint (' + shown + '/' + s.hints.length + ')';
               if (shown >= s.hints.length) el.disabled = true;
             },
             '#rev': function (e, el) {
+              A.sfx('win'); A.confetti(50);
               A.$('#sol').innerHTML = '<div class="solution"><b>Solution:</b> ' + A.esc(s.solution) + '</div>';
               el.disabled = true;
             },

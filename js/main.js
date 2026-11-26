@@ -29,7 +29,6 @@
     A.cur = null;
     // floaters live only in the top and bottom bands so they never sit on the text
     var fl = [['🕵️', '5%', '1%', 46, 7, 0], ['🔍', '40%', '0%', 34, 6.5, -1], ['💣', '76%', '2%', 50, 8, -2],
-              ['👑', '20%', '10%', 34, 9, -3], ['🎭', '62%', '11%', 36, 6, -1],
               ['🧩', '6%', '88%', 42, 7.5, -2], ['🎡', '44%', '92%', 40, 8.5, -4], ['⚖️', '80%', '88%', 40, 7, -5]];
     var names = A.games.map(function (g) { return '<span>' + g.emoji + ' ' + A.esc(g.name) + '</span>'; }).join('');
 
@@ -41,12 +40,15 @@
       '<h1 class="logo xl" aria-label="AATAA"><span>A</span><span>A</span><span class="tbl">T</span><span>A</span><span>A</span></h1>' +
       '<p class="tagline">Silent room? <b>AATAA shuru.</b></p>' +
       '<p class="sub">Tell us who’s in the room. We’ll pick the games and run them right from your phone.</p>' +
-      '<div class="pillrow"><span class="pill">' + A.games.length + ' games</span><span class="pill">No sign-up</span><span class="pill">Works offline</span></div>' +
+      '<div class="pillrow"><span class="pill">' + A.games.length + ' games</span><span class="pill">No sign-up</span><span class="pill">Works offline</span>' +
+      (A.streak() >= 2 ? '<span class="pill hot">🔥 ' + A.streak() + '-day streak</span>' : '') + '</div>' +
       '<button class="btn primary big glow" id="start" style="max-width:340px">AATAA shuru! →</button>' +
+      (S.ready ? '<button class="btn ghost" id="again" style="max-width:340px">⚡ Same crowd as last time · ' + S.players.length + ' people</button>' : '') +
       '<button class="link" id="install" hidden>⬇ Install the app</button>' +
       '<div class="ticker"><div class="track">' + names + names + '</div></div></div>',
       {
         '#start': function () { A.jingle(); wizard(0); },
+        '#again': function () { A.syncPlayers(); finish(); },
         '#install': function () { if (installEvt) { installEvt.prompt(); installEvt = null; A.$('#install').hidden = true; } }
       },
       { back: null, mode: 'home', title: 'AATAA' }
@@ -133,7 +135,7 @@
         b.onclick = function () {
           var p = S.players[+b.dataset.i];
           var n = prompt('Rename ' + p.name + ' to:', p.name);
-          if (n && n.trim()) { p.name = n.trim().slice(0, 14); draw(); }
+          if (n && n.trim()) { p.name = n.trim().slice(0, 14); draw(); A.save(); }
         };
       });
     }
@@ -141,6 +143,7 @@
 
   function finish() {
     A.keepAwake(); A.jingle(); A.seen = [];
+    S.ready = true; A.save();
     var vibes = S.vibes.length ? S.vibes.map(A.vibeLabel).join(' + ') : 'surprise me';
     var t = S.time >= 30 ? '30+ min' : S.time + ' min';
     A.render('<div class="center"><div class="loader"><span>🎲</span><span>🕵️</span><span>💣</span><span>🎭</span></div>' +
@@ -156,6 +159,11 @@
     A.showPicks();
   };
 
+  function fav(id) {
+    var on = A.isFav(id);
+    return '<span class="favbtn' + (on ? ' on' : '') + '" role="button" aria-label="Favourite" data-fav="' + id + '">' + (on ? '♥' : '♡') + '</span>';
+  }
+
   A.showPicks = function () {
     A.cur = null;
     if (!A.picks) return A.showHome();
@@ -163,28 +171,45 @@
     var cards = A.picks.map(function (x, i) {
       var g = x.g, ac = A.accentFor(g.id);
       return '<div class="stepcard" style="--a1:' + ac[0] + ';--a2:' + ac[1] + '"><div class="num">' + (i + 1) + '</div>' +
-        '<div class="pick"><span class="ribbon">' + x.role.label + '</span>' +
+        '<div class="pick"><span class="ribbon">' + x.role.label + '</span>' + fav(g.id) +
         '<div class="row"><div class="gem">' + g.emoji + '</div><div><h2>' + A.esc(g.name) + '</h2><p class="mute small">' + A.esc(g.tagline) + '</p></div></div>' +
         '<div class="meta"><span>👥 ' + g.min + '–' + g.max + '</span><span>⏱ ~' + g.mins[0] + '–' + g.mins[1] + ' min</span></div>' +
         '<p class="why"><b>' + A.esc(x.why) + '.</b> ' + A.esc(x.role.note) + '</p>' +
         '<button class="btn primary" data-play="' + g.id + '">Let’s play</button></div></div>';
     }).join('');
 
-    var all = A.games.filter(A.fits).map(function (g) {
+    function gtile(g) {
       var ac = A.accentFor(g.id);
-      return '<button class="gtile" data-play="' + g.id + '" style="--a1:' + ac[0] + ';--a2:' + ac[1] + '"><span class="gem">' + g.emoji + '</span><b>' + A.esc(g.name) + '</b></button>';
-    }).join('');
+      return '<button class="gtile" data-play="' + g.id + '" style="--a1:' + ac[0] + ';--a2:' + ac[1] + '"><span class="gem">' + g.emoji + '</span><b>' + A.esc(g.name) + '</b>' + fav(g.id) + '</button>';
+    }
+    var fits = A.games.filter(A.fits);
+    var favGames = fits.filter(function (g) { return A.isFav(g.id); });
+    var all = (favGames.length ? '<p class="label" style="grid-column:1/-1;margin:4px 0 0">⭐ Your favourites</p>' + favGames.map(gtile).join('') + '<p class="label" style="grid-column:1/-1;margin:8px 0 0">All games</p>' : '') +
+      fits.map(gtile).join('');
+
+    var d = A.daily(), dac = A.accentFor(d.game.id);
+    var daily = '<div class="daily" style="--a1:' + dac[0] + ';--a2:' + dac[1] + '"><div class="row"><div class="gem sm">' + d.game.emoji + '</div>' +
+      '<div><p class="eyebrow">🔥 AATAA of the day</p><h2 style="margin:0">' + A.esc(d.game.name) + '</h2></div></div>' +
+      '<p class="why"><b>Today’s twist:</b> ' + A.esc(d.twist) + '</p>' +
+      '<button class="btn ghost" data-play="' + d.game.id + '">Play it with the twist</button></div>';
 
     A.render(
       '<div class="introhero" style="align-items:flex-start;text-align:left"><p class="eyebrow">Tonight · ' + n + ' people</p>' +
       '<h1>Your <span class="grad">lineup</span></h1>' +
       '<p class="mute">Start gentle, build up, end loud. Or ignore us and play anything.</p></div>' +
+      daily +
       '<div class="lineup">' + cards + '</div>' +
       '<div class="stack"><button class="btn ghost" id="other">🔀 Shuffle the lineup</button>' +
       '<button class="btn ghost" id="edit">⚙️ Change the crowd</button>' +
       '<button class="btn ghost" id="invite">📲 Invite friends to AATAA</button></div>' +
       '<details class="all"><summary>Browse all games for ' + n + ' people</summary><div class="gamegrid">' + all + '</div></details>',
       {
+        '[data-fav]': function (e, el) {
+          e.stopPropagation();
+          var id = el.dataset.fav, on = A.toggleFav(id);
+          A.$$('[data-fav="' + id + '"]').forEach(function (b) { b.textContent = on ? '♥' : '♡'; b.classList.toggle('on', on); });
+          A.toast(on ? 'Added to favourites ♥' : 'Removed from favourites');
+        },
         '[data-play]': function (e, el) { A.intro(A.games.filter(function (g) { return g.id === el.dataset.play; })[0]); },
         '#other': function () { A.newPicks(); },
         '#edit': function () { wizard(0); },
@@ -203,7 +228,7 @@
       '<div class="meta"><span>👥 ' + g.min + '–' + g.max + '</span><span>⏱ ~' + g.mins[0] + '–' + g.mins[1] + ' min</span></div></div>' +
       '<div class="card howto"><h3>How to play</h3><ol class="steps">' + g.rules.map(function (r) { return '<li><span>' + r + '</span></li>'; }).join('') + '</ol></div>' +
       '<div class="cta"><button class="btn primary big glow" id="start">Start game</button></div>',
-      { '#start': function () { A.cur = g; A.jingle(); g.start(); } },
+      { '#start': function () { A.cur = g; A.jingle(); A.recordPlay(); g.start(); } },
       { back: function () { A.showPicks(); }, title: g.name, accentId: g.id, mode: 'app' }
     );
   };

@@ -39,7 +39,7 @@
       }
 
       function chosen(p) {
-        A.buzz(120);
+        A.buzz(120); A.sfx('chime');
         A.render('<div class="center"><p class="eyebrow">In the hot seat</p><div class="bigav">' + p.emoji + '</div><h1>' + A.esc(p.name) + '</h1>' +
           '<p class="mute">Choose wisely…</p>' +
           '<div class="stack"><button class="btn primary big" data-k="truth">🫣 Truth</button>' +

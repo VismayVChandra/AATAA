@@ -40,6 +40,11 @@ A custom domain is optional and is the only possible cost.
 | Mystery stories | `data/mystery.js` |
 | Truth / Dare / Chaos | `data/tod.js` |
 | Nickname packs (Avengers…) | `data/packs.js` |
+| Rank Your Friends prompts | `data/rank.js` |
+| Never Have I Ever statements | `data/never.js` |
+| Two Truths & a Lie topic nudges | `data/twotruths.js` |
+| "AATAA of the day" twists | `data/daily.js` |
+| Extra content for the base decks | `data/more.js` (add to the existing arrays) |
 
 Age tiers: a plain string is for everyone; `{ t: "text", m: 1 }` needs 18+, `m: 2` needs 25+.
 

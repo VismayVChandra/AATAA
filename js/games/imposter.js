@@ -109,7 +109,7 @@
           '<div class="stack"><button class="btn primary big" id="again">New words, same players</button>' +
           '<button class="btn ghost" id="home">Pick another game</button></div></div>',
           { '#again': deal, '#home': function () { A.showPicks(); } });
-        setTimeout(function () { A.confetti(crewWin ? 120 : 70); A.buzz([40, 30, 40]); }, 300);
+        setTimeout(function () { A.confetti(crewWin ? 120 : 70); A.sfx(crewWin ? 'win' : 'lose'); A.buzz([40, 30, 40]); }, 300);
       }
 
       setup();

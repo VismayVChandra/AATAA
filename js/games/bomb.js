@@ -40,7 +40,7 @@
 
       function boom() {
         A.buzz([300, 100, 300]);
-        A.beep(110, 800, 'sawtooth', 0.3);
+        A.sfx('boom');
         var f = A.pick(A.data.bomb.forfeits);
         A.render('<div class="center"><div class="boomtxt">💥 BOOM!</div>' +
           '<h2>Whoever is holding the phone…</h2>' +
