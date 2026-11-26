@@ -1,5 +1,5 @@
 /* Offline support: cache everything on first visit. Bump VERSION whenever you change any file. */
-const VERSION = 'aataa-v3';
+const VERSION = 'aataa-v4';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/core.js', 'js/recommend.js', 'js/main.js',
