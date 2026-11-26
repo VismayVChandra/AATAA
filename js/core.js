@@ -78,6 +78,18 @@
   /* ---------- the one render function every screen uses ---------- */
   A.leave = function () { if (confirm('Leave this game?')) A.showPicks(); };
 
+  // each game gets its own colour pair, used for buttons, glows and highlights
+  A.accents = {
+    likely: ['#ff4d8d', '#ff9a3c'], wyr: ['#5b8cff', '#a855f7'], riddles: ['#2ee6c5', '#5b8cff'],
+    imposter: ['#a855f7', '#ff4d8d'], mystery: ['#ffd23f', '#ff8a3c'], tod: ['#ff4d8d', '#8b5cf6'],
+    bomb: ['#ff5468', '#ff9a3c'], charades: ['#34d399', '#2ee6c5'], _: ['#ff4d8d', '#ff9a3c']
+  };
+  A.accentFor = function (id) { return A.accents[id] || A.accents._; };
+  A.setAccent = function (id) {
+    var ac = A.accentFor(id), r = document.documentElement.style;
+    r.setProperty('--a1', ac[0]); r.setProperty('--a2', ac[1]);
+  };
+
   A.render = function (html, handlers, opts) {
     opts = opts || {};
     A.cleanup();
@@ -86,15 +98,41 @@
     window.scrollTo(0, 0);
     Object.keys(handlers || {}).forEach(function (sel) {
       A.$$(sel, app).forEach(function (el) {
-        el.addEventListener('click', function (ev) { A.unlockAudio(); handlers[sel](ev, el); });
+        el.addEventListener('click', function (ev) { A.unlockAudio(); A.buzz(6); handlers[sel](ev, el); });
       });
     });
     var back = opts.back !== undefined ? opts.back : (A.cur ? A.leave : null);
     var b = A.$('#back');
     b.hidden = !back;
     b.onclick = back || null;
-    A.$('#title').textContent = opts.title || (A.cur ? A.cur.name : 'AATAA');
+    var ingame = !!A.cur;
+    A.$('#title').textContent = opts.title || (ingame ? A.cur.name : 'AATAA');
     document.body.dataset.theme = opts.theme || '';
+    document.body.dataset.mode = opts.mode || (ingame ? 'game' : 'app');
+    A.setAccent(opts.accentId || (A.cur && A.cur.id) || '_');
+  };
+
+  /* ---------- confetti (canvas, ~2s, respects reduced motion) ---------- */
+  A.confetti = function (count) {
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var cv = A.$('#fx'); if (!cv) return;
+    var W = cv.width = innerWidth, H = cv.height = innerHeight, x = cv.getContext('2d');
+    var cols = ['#ff4d8d', '#ff9a3c', '#ffd23f', '#2ee6c5', '#5b8cff', '#a855f7'];
+    var ps = []; count = count || 110;
+    for (var i = 0; i < count; i++) {
+      ps.push({ x: W / 2 + (Math.random() - .5) * 80, y: H * .42, vx: (Math.random() - .5) * 15, vy: -Math.random() * 16 - 4,
+        s: 6 + Math.random() * 7, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[i % cols.length], life: 0 });
+    }
+    var t0 = performance.now();
+    (function frame(t) {
+      var el = t - t0; x.clearRect(0, 0, W, H);
+      ps.forEach(function (p) {
+        p.vy += .38; p.vx *= .992; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        x.save(); x.globalAlpha = Math.max(0, 1 - el / 2200); x.translate(p.x, p.y); x.rotate(p.r);
+        x.fillStyle = p.c; x.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6); x.restore();
+      });
+      if (el < 2300) requestAnimationFrame(frame); else x.clearRect(0, 0, W, H);
+    })(t0);
   };
 
   A.toast = function (msg) {
@@ -125,7 +163,10 @@
       o.start(); o.stop(ac.currentTime + d + 0.02);
     } catch (e) {}
   };
-  A.buzz = function (p) { if (A.S.sound && navigator.vibrate) { try { navigator.vibrate(p); } catch (e) {} } };
+  A.buzz = function (p) {
+    var ua = navigator.userActivation;
+    if (A.S.sound && navigator.vibrate && (!ua || ua.hasBeenActive)) { try { navigator.vibrate(p); } catch (e) {} }
+  };
 
   var wl = null;
   A.keepAwake = function () {
@@ -158,10 +199,11 @@
   // 3-2-1 style countdown that writes into `el`
   A.countdown = function (el, from, done) {
     var n = from;
+    function bump() { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; }
     el.textContent = n; A.beep(520, 120);
     var id = A.interval(function () {
       n--;
-      if (n > 0) { el.textContent = n; A.beep(520, 120); }
+      if (n > 0) { el.textContent = n; bump(); A.beep(520, 120); A.buzz(15); }
       else { clearInterval(id); A.beep(900, 300); if (done) done(); }
     }, 1000);
   };
@@ -227,10 +269,21 @@
     var shareLines = rows.slice(0, 3).map(function (r, i) { return medals[i] + ' ' + r.p.emoji + ' ' + r.p.name + ' — ' + r.s + ' ' + (o.unit || 'pts'); });
     badges.forEach(function (b) { shareLines.push('🏷️ ' + b.p.name + ': ' + b.text); });
 
-    A.render('<div class="center"><div class="bigav">' + (o.emoji || '🏆') + '</div><h1>' + o.title + '</h1>' +
-      '<ol class="board">' + rows.map(function (r, i) {
-        return '<li><span class="m">' + (medals[i] || '') + '</span><span class="nm">' + A.who(r.p) + '</span><span class="pts">' + r.s + ' ' + (o.unit || 'pts') + '</span></li>';
-      }).join('') + '</ol>' +
+    var unit = o.unit || 'pts', podium = '', rest = rows;
+    if (rows.length >= 3) {
+      podium = '<div class="podium">' + [1, 0, 2].map(function (k) {
+        var r = rows[k];
+        return '<div class="pod p' + (k + 1) + '"><div class="pav">' + r.p.emoji + '</div><div class="pname">' + A.esc(r.p.name) + '</div>' +
+          '<div class="pbar"><span class="pm">' + medals[k] + '</span><b>' + r.s + '</b><small>' + unit + '</small></div></div>';
+      }).join('') + '</div>';
+      rest = rows.slice(3);
+    }
+    setTimeout(function () { if (rows[0].s > 0) { A.confetti(); A.buzz([40, 30, 40]); } }, 350);
+    A.render('<div class="center results"><div class="bigav">' + (o.emoji || '🏆') + '</div><h1>' + o.title + '</h1>' + podium +
+      (rest.length ? '<ol class="board">' + rest.map(function (r, i) {
+        var idx = rows.indexOf(r);
+        return '<li><span class="m">' + (medals[idx] || (idx + 1)) + '</span><span class="nm">' + A.who(r.p) + '</span><span class="pts">' + r.s + ' ' + unit + '</span></li>';
+      }).join('') + '</ol>' : '') +
       (badges.length ? '<div class="badges">' + badges.map(function (b) { return '<div class="badge">🏷️ ' + A.who(b.p) + ' <span>' + A.esc(b.text) + '</span></div>'; }).join('') + '</div>' : '') +
       (o.line ? '<p class="mute">' + o.line(rows) + '</p>' : '') +
       '<div class="stack"><button class="btn primary big" id="again">' + (o.againLabel || 'Play again') + '</button>' +

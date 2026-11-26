@@ -66,7 +66,7 @@
       function play(p) {
         var left = opts.secs, got = [], skipped = [], word = nextWord(), tilt = opts.mode === 'tilt';
         A.render('<div class="center" style="justify-content:flex-start;gap:12px">' +
-          '<div class="timer" id="t">' + left + '</div>' +
+          '<div class="ring" id="ring"><div class="timer" id="t">' + left + '</div></div>' +
           '<div class="tag">✓ <b id="sc">0</b> correct</div>' +
           '<div class="word big" id="w">' + A.esc(word) + '</div>' +
           '<p class="mute small">' + (tilt ? 'Tilt DOWN = correct · Tilt UP = pass' : 'No talking, just acting!') + '</p>' +
@@ -94,7 +94,8 @@
           left--;
           var t = A.$('#t'); if (!t) return;
           t.textContent = Math.max(left, 0);
-          if (left <= 10) { t.classList.add('low'); A.beep(700, 60); }
+          var rg = A.$('#ring'); rg.style.setProperty('--p', Math.max(left, 0) / opts.secs * 100 + '%');
+          if (left <= 10) { t.classList.add('low'); rg.classList.add('low'); A.beep(700, 60); }
           if (left <= 0) { A.beep(300, 600, 'sawtooth'); A.buzz(400); summary(p, got, skipped); }
         }, 1000);
       }

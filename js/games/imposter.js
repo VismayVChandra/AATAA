@@ -60,13 +60,14 @@
         A.render('<div class="center"><p class="eyebrow">Discussion</p>' +
           '<h1>' + A.who(starter) + ' goes first</h1>' +
           '<p class="mute">Go around the circle. Each person says <b>one clue word</b> about their secret word. Do two rounds, then argue!</p>' +
-          '<div class="timer" id="t">' + fmt(left) + '</div>' +
+          '<div class="ring" id="ring"><div class="timer" id="t" style="font-size:28px">' + fmt(left) + '</div></div>' +
           '<button class="btn primary big" id="vote">Time to vote 🗳️</button></div>',
           { '#vote': function () { vote(pair, imps, cat, players.map(function (p, i) { return i; }), imps.length); } });
         A.interval(function () {
           left--; var t = A.$('#t'); if (!t) return;
           t.textContent = fmt(Math.max(left, 0));
-          if (left === 30) { t.classList.add('low'); A.beep(500, 150); }
+          var rg = A.$('#ring'); rg.style.setProperty('--p', Math.max(left, 0) / 180 * 100 + '%');
+          if (left === 30) { t.classList.add('low'); rg.classList.add('low'); A.beep(500, 150); }
           if (left <= 0) { A.beep(300, 600, 'sawtooth'); A.buzz(400); }
         }, 1000);
       }
@@ -108,6 +109,7 @@
           '<div class="stack"><button class="btn primary big" id="again">New words, same players</button>' +
           '<button class="btn ghost" id="home">Pick another game</button></div></div>',
           { '#again': deal, '#home': function () { A.showPicks(); } });
+        setTimeout(function () { A.confetti(crewWin ? 120 : 70); A.buzz([40, 30, 40]); }, 300);
       }
 
       setup();
