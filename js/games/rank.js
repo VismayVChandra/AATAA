@@ -13,17 +13,19 @@
     ],
     start: function () {
       var players = A.S.players, n = players.length;
-      var deck = A.deck(A.data.rank), i = 0;
+      var deck = A.deck(A.data.rank, 'rank'), i = 0;
       var pts = players.map(function () { return 0; });
 
       function prompt() {
         if (i >= deck.length) return end();
+        A.mark('rank', deck[i]);
         A.render('<div class="center"><p class="eyebrow">Round ' + (i + 1) + '</p>' +
           '<div class="prompt"><small>Rank everyone. #1 is…</small><b>' + A.esc(deck[i]) + '</b></div>' +
           '<p class="mute">Argue first. Then lock in a ranking together.</p>' +
           '<button class="btn primary big" id="go">We’ve decided — rank them</button>' +
           '<button class="btn ghost" id="end">Finish &amp; see the board</button></div>',
           { '#go': rank, '#end': end });
+        A.say(deck[i]);
       }
 
       function rank() {

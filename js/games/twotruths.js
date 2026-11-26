@@ -25,6 +25,7 @@
           '<div class="ring" id="ring"><div class="timer" id="t">' + left + '</div></div>' +
           '<button class="btn primary big" id="done">Said them — time to vote</button></div>',
           { '#done': function () { vote(k); } });
+        A.say(p.name + ', think of two truths and one lie, and tell us all three.');
         A.interval(function () {
           left--; var t = A.$('#t'); if (!t) return;
           t.textContent = Math.max(left, 0);

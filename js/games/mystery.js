@@ -12,7 +12,7 @@
       'Narrator answers only “Yes”, “No” or “Irrelevant”. Stuck? Use a hint. Solve it together!'
     ],
     start: function () {
-      var players = A.S.players, stories = A.shuffle(A.data.mystery), i = 0;
+      var players = A.S.players, stories = A.unseenFirst('mystery', A.data.mystery), i = 0;
 
       function chooseNarrator() {
         var s = stories[i % stories.length];
@@ -38,6 +38,7 @@
 
       function play(p, s) {
         var shown = 0;
+        A.mark('mystery', s);
         A.render('<div class="center left" style="justify-content:flex-start">' +
           '<p class="eyebrow">Narrator: ' + A.esc(p.name) + ' ' + p.emoji + '</p>' +
           '<div class="story"><h2>' + A.esc(s.title) + '</h2><p>' + A.esc(s.story) + '</p></div>' +
@@ -62,6 +63,7 @@
             },
             '#next': function () { i++; chooseNarrator(); }
           });
+        A.say(s.title + '. ' + s.story);
       }
       chooseNarrator();
     }

@@ -25,7 +25,7 @@
   A.save = function () {
     try {
       var S = A.S;
-      localStorage.setItem('aataa.prefs', JSON.stringify({ count: S.count, pack: S.pack, age: S.age, vibes: S.vibes, time: S.time, sound: S.sound, ready: !!S.ready, players: S.players }));
+      localStorage.setItem('aataa.prefs', JSON.stringify({ count: S.count, pack: S.pack, age: S.age, vibes: S.vibes, time: S.time, sound: S.sound, voice: !!S.voice, ready: !!S.ready, players: S.players }));
     } catch (e) {}
   };
   A.load = function () {
@@ -39,7 +39,36 @@
   A.ageRank = function () { return { teen: 0, young: 1, adult: 2, mixed: 0 }[A.S.age] || 0; };
   A.txt = function (x) { return typeof x === 'string' ? x : x.t; };
   A.ageOK = function (x) { return (typeof x === 'string' ? 0 : (x.m || 0)) <= A.ageRank(); };
-  A.deck = function (arr) { return A.shuffle(arr.filter(A.ageOK).map(A.txt)); };
+  // `key` turns on no-repeat memory: prompts this phone hasn't shown yet come first
+  A.deck = function (arr, key) {
+    var items = arr.filter(A.ageOK).map(A.txt);
+    return key ? A.unseenFirst(key, items) : A.shuffle(items);
+  };
+
+  /* ---------- no-repeat memory (hashes only, localStorage) ---------- */
+  A.idOf = function (x) {
+    if (typeof x === 'string') return x;
+    if (Array.isArray(x)) return x[0] + '|' + x[1];
+    return x.q || x.t || x.title || JSON.stringify(x);
+  };
+  A.memGet = function () { try { return JSON.parse(localStorage.getItem('aataa.mem') || '{}'); } catch (e) { return {}; } };
+  A.memSet = function (m) { try { localStorage.setItem('aataa.mem', JSON.stringify(m)); } catch (e) {} };
+  A.hid = function (x) { return A.hash(A.idOf(x)).toString(36); };
+  A.unseenFirst = function (key, items) {
+    var m = A.memGet(), set = {};
+    (m[key] || []).forEach(function (h) { set[h] = 1; });
+    var all = items.map(function (x) { return { x: x, h: A.hid(x) }; });
+    var fresh = all.filter(function (a) { return !set[a.h]; });
+    if (!fresh.length) { m[key] = []; A.memSet(m); fresh = all; }       // seen everything: start a new cycle
+    var rest = all.filter(function (a) { return fresh.indexOf(a) < 0; });
+    return A.shuffle(fresh).concat(A.shuffle(rest)).map(function (a) { return a.x; });
+  };
+  A.mark = function (key, item) {
+    var m = A.memGet(), h = A.hid(item), l = m[key] || (m[key] = []);
+    if (l.indexOf(h) < 0) { l.push(h); if (l.length > 800) l.shift(); }
+    A.memSet(m);
+  };
+  A.resetMemory = function () { try { localStorage.removeItem('aataa.mem'); } catch (e) {} };
 
   /* ---------- players ---------- */
   A.makePlayers = function () {
@@ -95,9 +124,12 @@
   A.render = function (html, handlers, opts) {
     opts = opts || {};
     A.cleanup();
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
     var app = A.$('#app');
     app.innerHTML = '<section class="screen ' + (opts.cls || '') + '">' + html + '</section>';
     window.scrollTo(0, 0);
+    // tap a prompt card to hear it again when the host voice is on
+    A.$$('.prompt', app).forEach(function (el) { el.addEventListener('click', function () { A.say(el.innerText); }); });
     Object.keys(handlers || {}).forEach(function (sel) {
       A.$$(sel, app).forEach(function (el) {
         el.addEventListener('click', function (ev) { A.unlockAudio(); A.buzz(6); handlers[sel](ev, el); });
@@ -207,6 +239,26 @@
     }
   };
 
+  /* ---------- read-aloud host voice (browser speech, free and offline-capable) ---------- */
+  A.pickVoice = function () {
+    var vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+    return vs.filter(function (v) { return v.lang === 'en-IN'; })[0] ||
+           vs.filter(function (v) { return /^en/i.test(v.lang); })[0] || null;
+  };
+  A.say = function (text) {
+    if (!A.S.voice || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    try {
+      speechSynthesis.cancel();
+      var clean = String(text).replace(/<[^>]+>/g, '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
+      if (!clean) return;
+      var u = new SpeechSynthesisUtterance(clean), v = A.pickVoice();
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-IN';
+      u.rate = 1;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  };
+  if (window.speechSynthesis) speechSynthesis.onvoiceschanged = function () {};
+
   /* ---------- stats, favourites, daily pick (localStorage only) ---------- */
   function key(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   A.today = function () { return key(new Date()); };
@@ -291,6 +343,7 @@
       '<button class="btn primary big" id="ok">' + (o.btn || ("I'm " + A.esc(p.name) + ' →')) + '</button></div>',
       { '#ok': o.onTap });
     A.sfx('whoosh');
+    A.say('Pass the phone to ' + p.name);
   };
 
   // hold-to-reveal secret screen (stops shoulder surfers)
@@ -336,6 +389,8 @@
   A.results = function (o) {
     var rows = A.S.players.map(function (p, i) { return { p: p, s: o.scores[i] }; }).sort(function (a, b) { return b.s - a.s; });
     var medals = ['🥇', '🥈', '🥉'];
+    var inNight = !!(A.night && A.night.active && !o.noNight);
+    if (inNight && A.night.awarded !== A.night.idx) A.nightAward(rows);
     var badges = [];                       // [{p, text}]
     if (o.titles && rows.length > 1 && rows[0].s > rows[rows.length - 1].s) {
       badges.push({ p: rows[0].p, text: A.pick(o.titles[0]) });
@@ -361,14 +416,32 @@
       }).join('') + '</ol>' : '') +
       (badges.length ? '<div class="badges">' + badges.map(function (b) { return '<div class="badge">🏷️ ' + A.who(b.p) + ' <span>' + A.esc(b.text) + '</span></div>'; }).join('') + '</div>' : '') +
       (o.line ? '<p class="mute">' + o.line(rows) + '</p>' : '') +
-      '<div class="stack"><button class="btn primary big" id="again">' + (o.againLabel || 'Play again') + '</button>' +
+      '<div class="stack">' +
+      (inNight ? '<button class="btn primary big" id="home">Continue the night ▶</button>'
+               : '<button class="btn primary big" id="again">' + (o.againLabel || 'Play again') + '</button>') +
       '<button class="btn ghost" id="share">📤 Share this result</button>' +
-      '<button class="btn ghost" id="home">Pick another game</button></div></div>',
+      (inNight ? '' : '<button class="btn ghost" id="home">' + (o.homeLabel || 'Pick another game') + '</button>') + '</div></div>',
       {
         '#again': o.again,
         '#share': function () { A.shareCard(String(o.title).replace(/<[^>]+>/g, ''), o.emoji || '🏆', shareLines); },
-        '#home': function () { A.showPicks(); }
+        '#home': function () { if (o.home) o.home(); else A.showPicks(); }
       });
+    if (rows[0].s > 0) A.say(String(o.title).replace(/<[^>]+>/g, '') + '. ' + rows[0].p.name + ' wins.');
+  };
+
+  // Game Night: award 3/2/1 points to the top three of a game's scoreboard
+  A.nightAward = function (rows) {
+    var N = A.night; N.awarded = N.idx; N.autoDone = true;
+    if (!rows[0] || !(rows[0].s > 0)) return;
+    var pts = [3, 2, 1], rank = -1, last = null, msg = [];
+    rows.forEach(function (r) {
+      if (r.s !== last) { rank++; last = r.s; }
+      if (rank > 2 || !(r.s > 0)) return;
+      var i = A.S.players.indexOf(r.p);
+      N.pts[i] += pts[rank];
+      if (rank === 0) msg.push(r.p.name + ' +' + pts[0]);
+    });
+    A.toast('🌙 ' + msg.join(', '));
   };
 
   /* ---------- brand: start jingle ---------- */

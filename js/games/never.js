@@ -12,11 +12,12 @@
       'Each confession adds to your tally. Most confessions wins the “experienced” crown (and the stories).'
     ],
     start: function () {
-      var players = A.S.players, deck = A.deck(A.data.never), i = 0;
+      var players = A.S.players, deck = A.deck(A.data.never, 'never'), i = 0;
       var tally = players.map(function () { return 0; });
 
       function show() {
         if (i >= deck.length) return end();
+        A.mark('never', deck[i]);
         A.render('<div class="center" style="justify-content:flex-start"><p class="eyebrow">Statement ' + (i + 1) + '</p>' +
           '<div class="prompt"><small>Never have I ever…</small><b>' + A.esc(deck[i]) + '</b></div>' +
           '<p class="mute">Tap everyone who <b>HAS</b> done it:</p>' +
@@ -28,6 +29,7 @@
             '#next': function () { commit(); i++; show(); },
             '#end': function () { commit(); end(); }
           });
+        A.say('Never have I ever ' + deck[i]);
       }
       function commit() {
         var sel = A.$$('.pchip.sel');

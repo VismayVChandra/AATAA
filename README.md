@@ -7,6 +7,14 @@ and it recommends three games in order: **warm-up → main event → wildcard**.
 - Works **offline** after the first visit and can be **installed** to the home screen (PWA).
 - Content (prompts, riddles, words) lives in `data/*.js`. Edit those files to add more.
 
+## Features worth knowing about
+
+- **Game Night:** from the lineup, “Run the whole night” plans a ladder of games that fits your time and keeps one scoreboard
+  (3/2/1 points per game, or tap an MVP) with a champion card at the end.
+- **Make it personal:** one inside joke per friend (“is most likely to…”) that appears in Most Likely To and Truth or Dare.
+- **No repeats:** prompts a phone has already shown come last (hashes only, stored in `localStorage`, key `aataa.mem`).
+- **Host voice:** the 🗣️ button reads prompts aloud using the browser's built-in speech. Tap a prompt card to hear it again.
+
 ## Run it locally
 
 ```powershell

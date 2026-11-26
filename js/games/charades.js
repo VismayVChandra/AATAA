@@ -22,8 +22,10 @@
         return d[opts.deck].words;
       }
       function nextWord() {
-        if (!queue.length) queue = A.shuffle(allWords());
-        return queue.pop();
+        if (!queue.length) queue = A.unseenFirst('charades', allWords()).reverse();   // pop() takes unseen words first
+        var w = queue.pop();
+        A.mark('charades', w);
+        return w;
       }
 
       function setup() {

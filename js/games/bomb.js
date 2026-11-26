@@ -12,15 +12,17 @@
       'The beeping speeds up. Whoever holds the phone when it explodes takes a silly forfeit.'
     ],
     start: function () {
-      var cats = A.shuffle(A.data.bomb.cats), r = 0;
+      var cats = A.unseenFirst('bomb', A.data.bomb.cats), r = 0;
 
       function ready() {
         var c = cats[r % cats.length];
+        A.mark('bomb', c);
         A.render('<div class="center"><p class="eyebrow">Round ' + (r + 1) + '</p>' +
           '<div class="prompt"><small>Category</small><b>' + A.esc(c) + '</b></div>' +
           '<p class="mute">Say one answer, then pass the phone. No repeats. No pausing. The fuse length is a secret…</p>' +
           '<button class="btn primary big" id="light">🔥 Light the fuse</button></div>',
           { '#light': function () { fuse(c); } });
+        A.say('Category: ' + c);
       }
 
       function fuse(c) {

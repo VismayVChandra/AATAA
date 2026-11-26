@@ -13,7 +13,7 @@
     ],
     start: function () {
       var T = A.data.tod, players = A.S.players;
-      var truths = A.deck(T.truths), dares = A.deck(T.dares), chaos = A.shuffle(T.chaos);
+      var truths = A.deck(T.truths, 'truths'), dares = A.deck(T.dares, 'dares'), chaos = A.unseenFirst('chaos', T.chaos);
       var ti = 0, di = 0, ci = 0, last = -1;
 
       function ready() {
@@ -46,19 +46,24 @@
           '<button class="btn danger big" data-k="dare">😈 Dare</button>' +
           '<button class="btn ghost" data-k="chaos">🎲 Surprise me (chaos!)</button></div></div>',
           { '[data-k]': function (e, el) { card(p, el.dataset.k); } });
+        A.say(p.name + '. Truth, dare, or chaos?');
       }
 
       function card(p, kind) {
         var text;
-        if (kind === 'truth') { text = truths[ti++ % truths.length]; }
-        else if (kind === 'dare') { text = dares[di++ % dares.length]; }
-        else { text = chaos[ci++ % chaos.length].replace(/\{p\}/g, p.name); }
+        if (kind === 'truth') {
+          if (p.fact && Math.random() < 0.5) {      // an inside joke from "Make it personal"
+            text = 'Your friends say you’re most likely to ' + p.fact + '. True or false? Defend yourself!';
+          } else { text = truths[ti++ % truths.length]; A.mark('truths', text); }
+        } else if (kind === 'dare') { text = dares[di++ % dares.length]; A.mark('dares', text); }
+        else { var raw = chaos[ci++ % chaos.length]; A.mark('chaos', raw); text = raw.replace(/\{p\}/g, p.name); }
         var label = { truth: 'Truth', dare: 'Dare', chaos: 'Chaos' }[kind];
         A.render('<div class="center"><span class="kind ' + kind + '">' + label + ' for ' + A.esc(p.name) + '</span>' +
           '<div class="prompt"><b>' + A.esc(text) + '</b></div>' +
           '<div class="stack"><button class="btn good big" id="done">✔ Done!</button>' +
           '<button class="btn ghost" id="skip">Can’t do it → forfeit</button></div></div>',
           { '#done': ready, '#skip': function () { forfeit(p); } });
+        A.say(p.name + '. ' + text);
       }
 
       function forfeit(p) {

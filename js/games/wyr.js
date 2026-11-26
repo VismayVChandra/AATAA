@@ -13,11 +13,12 @@
     ],
     start: function () {
       var rank = A.ageRank();
-      var deck = A.shuffle(A.data.wyr.filter(function (x) { return (x[2] || 0) <= rank; })), i = 0;
+      var deck = A.unseenFirst('wyr', A.data.wyr.filter(function (x) { return (x[2] || 0) <= rank; })), i = 0;
 
       function show() {
         if (i >= deck.length) { deck = A.shuffle(deck); i = 0; }
         var q = deck[i];
+        A.mark('wyr', q);
         A.render('<div class="center"><p class="eyebrow">Would you rather… #' + (i + 1) + '</p>' +
           '<div class="opt a">' + A.esc(q[0]) + '</div><div class="or">OR</div><div class="opt b">' + A.esc(q[1]) + '</div>' +
           '<p class="mute small">On three, shout A (top) or B (bottom) together. 1… 2… 3!</p>' +
@@ -28,6 +29,7 @@
             '#next': function () { i++; show(); },
             '#def': function (e, el) { el.disabled = true; defend(); }
           });
+        A.say('Would you rather ' + q[0] + '. Or. ' + q[1]);
       }
       function defend() {
         var n = 20, box = A.$('#defend');

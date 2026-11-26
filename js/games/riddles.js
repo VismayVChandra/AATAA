@@ -12,16 +12,18 @@
       'Tap “Reveal answer”, then tap the person who cracked it. Twelve riddles per game.'
     ],
     start: function () {
-      var deck = A.shuffle(A.data.riddles).slice(0, 12), players = A.S.players;
+      var deck = A.unseenFirst('riddles', A.data.riddles).slice(0, 12), players = A.S.players;
       var scores = players.map(function () { return 0; }), i = 0;
 
       function ask() {
         if (i >= deck.length) return end();
+        A.mark('riddles', deck[i]);
         A.render('<div class="center"><p class="eyebrow">Riddle ' + (i + 1) + ' of ' + deck.length + '</p>' +
           '<div class="prompt"><b>' + A.esc(deck[i].q) + '</b></div>' +
           '<button class="btn primary big" id="show">Reveal answer</button>' +
           '<button class="btn ghost" id="end">Finish game</button></div>',
           { '#show': reveal, '#end': end });
+        A.say(deck[i].q);
       }
       function reveal() {
         A.render('<div class="center"><p class="eyebrow">The answer</p>' +

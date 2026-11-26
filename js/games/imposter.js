@@ -36,7 +36,8 @@
 
       function deal() {
         var key = opts.cat === 'random' ? A.pick(Object.keys(A.data.words)) : opts.cat;
-        var cat = A.data.words[key], pair = A.pick(cat.pairs);
+        var cat = A.data.words[key], pair = A.unseenFirst('words:' + key, cat.pairs)[0];
+        A.mark('words:' + key, pair);
         if (Math.random() < 0.5) pair = [pair[1], pair[0]];
         var imps = [];
         var count = Math.min(opts.imps, n >= 7 ? 2 : 1);
@@ -63,6 +64,7 @@
           '<div class="ring" id="ring"><div class="timer" id="t" style="font-size:28px">' + fmt(left) + '</div></div>' +
           '<button class="btn primary big" id="vote">Time to vote 🗳️</button></div>',
           { '#vote': function () { vote(pair, imps, cat, players.map(function (p, i) { return i; }), imps.length); } });
+        A.say(starter.name + ' goes first. Say one clue word about your secret word.');
         A.interval(function () {
           left--; var t = A.$('#t'); if (!t) return;
           t.textContent = fmt(Math.max(left, 0));
