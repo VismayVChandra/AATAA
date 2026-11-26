@@ -15,6 +15,11 @@ and it recommends three games in order: **warm-up → main event → wildcard**.
 - **No repeats:** prompts a phone has already shown come last (hashes only, stored in `localStorage`, key `aataa.mem`).
 - **Host voice:** the 🗣️ button reads prompts aloud using the browser's built-in speech. Tap a prompt card to hear it again.
 
+## Font
+
+Text uses **Plus Jakarta Sans** (variable, Latin subset), bundled in `fonts/` so every phone shows the same look and it
+works offline. It is licensed under the SIL Open Font License; see `fonts/FONT-LICENSE.txt`.
+
 ## Run it locally
 
 ```powershell

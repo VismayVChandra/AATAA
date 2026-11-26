@@ -1,5 +1,5 @@
 /* Offline support: cache everything on first visit. Bump VERSION whenever you change any file. */
-const VERSION = 'aataa-v6';
+const VERSION = 'aataa-v7';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/core.js', 'js/recommend.js', 'js/main.js',
@@ -9,7 +9,7 @@ const FILES = [
   'data/packs.js', 'data/likely.js', 'data/wyr.js', 'data/riddles.js', 'data/words.js',
   'data/bomb.js', 'data/charades.js', 'data/mystery.js', 'data/tod.js',
   'data/more.js', 'data/rank.js', 'data/never.js', 'data/twotruths.js', 'data/daily.js',
-  'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/og.png'
+  'fonts/plus-jakarta-sans-latin-wght.woff2', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/og.png'
 ];
 
 self.addEventListener('install', (e) => {

@@ -1,13 +1,18 @@
 /* =========================================================
    AATAA design system
    ========================================================= */
+@font-face{
+  font-family:"Plus Jakarta Sans";
+  src:url("../fonts/plus-jakarta-sans-latin-wght.woff2") format("woff2");
+  font-weight:200 800;font-style:normal;font-display:swap;
+}
 :root{
   --bg:#0a0716; --ink:#f7f4ff; --mute:#a8a0d0; --mute2:#6f6797;
   --line:rgba(255,255,255,.11); --glass:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.03));
   --pink:#ff4d8d; --orange:#ff9a3c; --teal:#2ee6c5; --blue:#5b8cff; --violet:#a855f7; --yellow:#ffd23f; --green:#34d399; --red:#ff5468;
   --a1:#ff4d8d; --a2:#ff9a3c;
   --ease:cubic-bezier(.2,.9,.25,1); --spring:cubic-bezier(.2,1.5,.4,1);
-  --font:"Inter","SF Pro Display",ui-rounded,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font:"Plus Jakarta Sans","Inter","SF Pro Display",ui-rounded,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}

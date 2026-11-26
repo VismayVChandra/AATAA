@@ -1,0 +1,6 @@
+Plus Jakarta Sans (variable, Latin subset)
+Designed by Tokotype. Licensed under the SIL Open Font License, Version 1.1,
+which allows free use, embedding and redistribution, including in commercial work.
+License text: https://openfontlicense.org
+Project: https://github.com/tokotype/PlusJakartaSans
+Packaged via Fontsource (https://fontsource.org).
