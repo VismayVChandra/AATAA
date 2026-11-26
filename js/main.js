@@ -14,8 +14,9 @@
     A.syncPlayers();
 
     var html =
-      '<div class="hero"><h1 class="logo">AATAA</h1>' +
-      '<p class="mute">Silent room? Not for long.<br>Tell us about your crowd and we’ll pick the games.</p></div>' +
+      '<div class="hero"><h1 class="logo" aria-label="AATAA"><span>A</span><span>A</span><span class="tbl">T</span><span>A</span><span>A</span></h1>' +
+      '<p class="tagline">Silent room? <b>AATAA shuru.</b></p>' +
+      '<p class="mute">One phone. Zero silence.<br>Tell us about your crowd and we’ll pick the games.</p></div>' +
 
       '<div class="card"><div class="row between"><h3>How many people?</h3>' +
       '<div class="stepper"><button id="minus" aria-label="fewer">−</button><b id="cnt">' + S.count + '</b><button id="plus" aria-label="more">+</button></div></div>' +
@@ -39,7 +40,8 @@
       TIMES.map(function (t) { return A.chip('time', t[0], t[1], S.time === t[0]); }).join('') +
       '</div></div>' +
 
-      '<button class="btn primary big" id="go">Find our games →</button>' +
+      '<button class="btn primary big" id="go">AATAA shuru! →</button>' +
+      '<button class="btn ghost" id="invite">📲 Invite friends to AATAA</button>' +
       '<p class="mute small foot">One phone, passed around. Works offline. No sign-up, no ads, no tracking.</p>';
 
     A.render(html, {
@@ -59,7 +61,8 @@
         el.classList.toggle('on', i < 0);
         A.save();
       },
-      '#go': function () { A.keepAwake(); A.seen = []; A.newPicks(); }
+      '#invite': function () { A.invite(); },
+      '#go': function () { A.keepAwake(); A.jingle(); A.seen = []; A.newPicks(); }
     }, { back: null, title: 'AATAA' });
     draw();
 
@@ -130,7 +133,7 @@
       '<p class="mute">' + A.esc(g.tagline) + '</p>' +
       '<div class="card howto"><h3>How to play</h3><ol>' + g.rules.map(function (r) { return '<li>' + r + '</li>'; }).join('') + '</ol></div>' +
       '<button class="btn primary big" id="start">Start game</button></div>',
-      { '#start': function () { A.cur = g; g.start(); } },
+      { '#start': function () { A.cur = g; A.jingle(); g.start(); } },
       { back: function () { A.showPicks(); }, title: g.name }
     );
   };

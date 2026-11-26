@@ -49,7 +49,19 @@ p{margin:0}
 
 .hero{text-align:center;padding:6px 0 4px}
 .hero.left{text-align:left}
-.logo{font-size:54px;letter-spacing:.08em;background:linear-gradient(90deg,var(--pink),var(--orange),var(--yellow));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px}
+.logo{font-size:56px;letter-spacing:.06em;margin-bottom:4px;display:flex;justify-content:center;align-items:flex-end;gap:2px;line-height:1}
+.logo span{background:linear-gradient(180deg,var(--pink),var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo span:nth-child(2){transform:rotate(6deg)}
+.logo span:nth-child(1){transform:rotate(-6deg)}
+.logo span:nth-child(4){transform:rotate(-6deg)}
+.logo span:nth-child(5){transform:rotate(6deg)}
+.logo .tbl{position:relative;background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--yellow);margin:0 4px}
+.logo .tbl::before{content:"";position:absolute;left:50%;top:-4px;width:16px;height:16px;border-radius:5px;transform:translateX(-50%);background:var(--teal);box-shadow:0 0 18px var(--teal)}
+.tagline{font-size:18px;margin-bottom:6px}
+.tagline b{color:var(--yellow)}
+.badges{display:flex;flex-direction:column;gap:8px;width:100%}
+.badge{background:#ffd23f1a;border:1px solid #ffd23f55;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.badge span{color:var(--yellow);font-weight:800}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
 .label{color:var(--mute);font-size:13px;margin:12px 0 8px}

@@ -37,6 +37,8 @@
       function end() {
         A.results({
           title: 'Big brain board', emoji: '🧠', scores: scores, unit: 'pts',
+          titles: [['Big Brain Energy', 'Walking Google', 'Riddle Royalty', 'Sherlock of the Group'],
+                   ['Brain on Airplane Mode', 'Vibes Only', 'Professional Guesser (wrong)', 'Here For the Snacks']],
           line: function (rows) { return rows[0].s ? A.esc(rows[0].p.name) + ' has the sharpest mind tonight.' : 'Nobody scored. The riddles win this round.'; },
           again: function () { A.cur.start(); }
         });

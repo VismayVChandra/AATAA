@@ -215,17 +215,104 @@
     })();
   };
 
-  // end-of-game leaderboard
+  // end-of-game leaderboard, with funny group-chat-worthy titles and a share card
   A.results = function (o) {
     var rows = A.S.players.map(function (p, i) { return { p: p, s: o.scores[i] }; }).sort(function (a, b) { return b.s - a.s; });
     var medals = ['🥇', '🥈', '🥉'];
+    var badges = [];                       // [{p, text}]
+    if (o.titles && rows.length > 1 && rows[0].s > rows[rows.length - 1].s) {
+      badges.push({ p: rows[0].p, text: A.pick(o.titles[0]) });
+      badges.push({ p: rows[rows.length - 1].p, text: A.pick(o.titles[1]) });
+    }
+    var shareLines = rows.slice(0, 3).map(function (r, i) { return medals[i] + ' ' + r.p.emoji + ' ' + r.p.name + ' — ' + r.s + ' ' + (o.unit || 'pts'); });
+    badges.forEach(function (b) { shareLines.push('🏷️ ' + b.p.name + ': ' + b.text); });
+
     A.render('<div class="center"><div class="bigav">' + (o.emoji || '🏆') + '</div><h1>' + o.title + '</h1>' +
       '<ol class="board">' + rows.map(function (r, i) {
         return '<li><span class="m">' + (medals[i] || '') + '</span><span class="nm">' + A.who(r.p) + '</span><span class="pts">' + r.s + ' ' + (o.unit || 'pts') + '</span></li>';
       }).join('') + '</ol>' +
+      (badges.length ? '<div class="badges">' + badges.map(function (b) { return '<div class="badge">🏷️ ' + A.who(b.p) + ' <span>' + A.esc(b.text) + '</span></div>'; }).join('') + '</div>' : '') +
       (o.line ? '<p class="mute">' + o.line(rows) + '</p>' : '') +
       '<div class="stack"><button class="btn primary big" id="again">' + (o.againLabel || 'Play again') + '</button>' +
+      '<button class="btn ghost" id="share">📤 Share this result</button>' +
       '<button class="btn ghost" id="home">Pick another game</button></div></div>',
-      { '#again': o.again, '#home': function () { A.showPicks(); } });
+      {
+        '#again': o.again,
+        '#share': function () { A.shareCard(String(o.title).replace(/<[^>]+>/g, ''), o.emoji || '🏆', shareLines); },
+        '#home': function () { A.showPicks(); }
+      });
+  };
+
+  /* ---------- brand: start jingle ---------- */
+  A.jingle = function () {
+    A.unlockAudio();
+    [[523, 0], [659, 110], [784, 220], [1047, 330]].forEach(function (n) {
+      setTimeout(function () { A.beep(n[0], 160, 'triangle', 0.16); }, n[1]);
+    });
+    A.buzz([30, 40, 30]);
+  };
+
+  /* ---------- sharing (all client-side) ---------- */
+  A.siteUrl = function () { return location.origin + location.pathname.replace(/index\.html$/, ''); };
+
+  A.invite = function () {
+    var url = A.siteUrl();
+    var text = 'Silent room? AATAA shuru. 🎉 Party games on one phone, no sign-up, works offline:';
+    if (navigator.share) {
+      navigator.share({ title: 'AATAA', text: text, url: url }).catch(function () {});
+    } else {
+      window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener');
+    }
+  };
+
+  // draws a 1080x1080 result card on a canvas and shares it as an image (falls back to text)
+  A.shareCard = function (title, emoji, lines) {
+    var url = A.siteUrl();
+    var text = 'We just played ' + title + ' on AATAA 🎉\n' + lines.join('\n') + '\n\nPlay with your gang: ' + url;
+    var c = document.createElement('canvas'); c.width = 1080; c.height = 1080;
+    var x = c.getContext('2d');
+    var g = x.createLinearGradient(0, 0, 1080, 1080);
+    g.addColorStop(0, '#2a1763'); g.addColorStop(0.55, '#150f33'); g.addColorStop(1, '#3b0f3a');
+    x.fillStyle = g; x.fillRect(0, 0, 1080, 1080);
+    var glow = x.createRadialGradient(900, 100, 10, 900, 100, 520);
+    glow.addColorStop(0, 'rgba(255,77,141,.35)'); glow.addColorStop(1, 'rgba(255,77,141,0)');
+    x.fillStyle = glow; x.fillRect(0, 0, 1080, 1080);
+
+    x.textAlign = 'center'; x.fillStyle = '#fff';
+    x.font = '900 70px system-ui, Arial, sans-serif';
+    var lg = x.createLinearGradient(380, 0, 700, 0); lg.addColorStop(0, '#ff4d8d'); lg.addColorStop(1, '#ffd23f');
+    x.fillStyle = lg; x.fillText('A A T A A', 540, 120);
+    x.font = '170px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+    x.fillStyle = '#fff'; x.fillText(emoji, 540, 330);
+    x.font = '800 62px system-ui, Arial, sans-serif';
+    x.fillText(title.length > 26 ? title.slice(0, 25) + '…' : title, 540, 430);
+
+    x.textAlign = 'left';
+    var y = 540;
+    lines.slice(0, 6).forEach(function (ln) {
+      x.fillStyle = 'rgba(255,255,255,.09)';
+      x.beginPath(); (x.roundRect ? x.roundRect(110, y - 54, 860, 84, 24) : x.rect(110, y - 54, 860, 84)); x.fill();
+      x.fillStyle = '#fff'; x.font = '600 38px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+      var t = ln.length > 40 ? ln.slice(0, 39) + '…' : ln;
+      x.fillText(t, 140, y + 2);
+      y += 100;
+    });
+    x.textAlign = 'center'; x.fillStyle = '#a9a1d4'; x.font = '600 34px system-ui, Arial, sans-serif';
+    x.fillText('Silent room? AATAA shuru.', 540, 1010);
+
+    c.toBlob(function (blob) {
+      try {
+        var file = new File([blob], 'aataa-result.png', { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], text: text }).catch(function () {});
+          return;
+        }
+      } catch (e) {}
+      if (navigator.share) { navigator.share({ title: 'AATAA', text: text }).catch(function () {}); return; }
+      // desktop fallback: download the image and open WhatsApp with the text
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'aataa-result.png'; a.click();
+      A.toast('Image saved — attach it in your chat');
+      setTimeout(function () { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); }, 600);
+    }, 'image/png');
   };
 })();

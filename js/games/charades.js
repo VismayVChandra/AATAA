@@ -113,6 +113,8 @@
               if (more) return intro();
               A.results({
                 title: 'Charades scores', emoji: '🎭', scores: scores, unit: 'pts',
+                titles: [['Oscar Material', 'Natural Born Actor', 'Bollywood Is Calling', 'Over-Acting Champion'],
+                         ['Statue Mode', 'Needs Acting Classes', 'Silent Film Extra', 'Buffering…']],
                 againLabel: 'Another round',
                 line: function (rows) { return rows[0].s ? A.esc(rows[0].p.name) + ' is leading. Stage name pending.' : 'Nobody scored yet. Try more dramatic acting.'; },
                 again: intro

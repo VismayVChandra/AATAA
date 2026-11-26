@@ -45,6 +45,8 @@
       function end() {
         A.results({
           title: 'Crown count', emoji: '👑', scores: scores, unit: '👑',
+          titles: [['Chief Pointee', 'The Usual Suspect', 'Public Enemy No. 1', 'Group Drama Department'],
+                   ['Suspiciously Innocent', 'The Untouchable', 'Too Pure For This Group', 'Teflon Friend']],
           line: function (rows) {
             return rows[0].s ? A.esc(rows[0].p.name) + ' is officially the most-pointed-at. Everyone else: you know what you did.'
                              : 'Zero crowns. Suspiciously nice crowd.';
